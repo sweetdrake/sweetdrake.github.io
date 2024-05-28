@@ -1,4 +1,4 @@
 User-agent: *
 Disallow:
 
-Sitemap: https://sweetdrake.github.io///sitemap.xml
+Sitemap: https://sweetdrake.github.io/al-folio/sitemap.xml
