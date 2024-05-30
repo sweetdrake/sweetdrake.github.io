@@ -1,4 +1,61 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="kr"><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="https://sweetdrake.github.io/feed.xml" rel="self" type="application/atom+xml"/><link href="https://sweetdrake.github.io/" rel="alternate" type="text/html" hreflang="kr"/><updated>2024-05-30T10:42:49+00:00</updated><id>https://sweetdrake.github.io/feed.xml</id><title type="html">Learning by doing</title><subtitle></subtitle><entry><title type="html">a post with tabs</title><link href="https://sweetdrake.github.io/blog/2024/tabs/" rel="alternate" type="text/html" title="a post with tabs"/><published>2024-05-01T00:32:13+00:00</published><updated>2024-05-01T00:32:13+00:00</updated><id>https://sweetdrake.github.io/blog/2024/tabs</id><content type="html" xml:base="https://sweetdrake.github.io/blog/2024/tabs/"><![CDATA[<p>This is how a post with <a href="https://github.com/Ovski4/jekyll-tabs">tabs</a> looks like. Note that the tabs could be used for different purposes, not only for code.</p> <h2 id="first-tabs">First tabs</h2> <p>To add tabs, use the following syntax:</p> <div class="language-liquid highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">{%</span><span class="w"> </span><span class="nt">tabs</span><span class="w"> </span><span class="nv">group-name</span><span class="w"> </span><span class="cp">%}</span>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="kr"><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="https://sweetdrake.github.io/feed.xml" rel="self" type="application/atom+xml"/><link href="https://sweetdrake.github.io/" rel="alternate" type="text/html" hreflang="kr"/><updated>2024-05-30T10:45:45+00:00</updated><id>https://sweetdrake.github.io/feed.xml</id><title type="html">Learning by doing</title><subtitle></subtitle><entry><title type="html">인증서는 어떻게 verification될까?</title><link href="https://sweetdrake.github.io/blog/2024/AI-folio-tutorial/" rel="alternate" type="text/html" title="인증서는 어떻게 verification될까?"/><published>2024-05-29T10:14:00+00:00</published><updated>2024-05-29T10:14:00+00:00</updated><id>https://sweetdrake.github.io/blog/2024/AI-folio-tutorial</id><content type="html" xml:base="https://sweetdrake.github.io/blog/2024/AI-folio-tutorial/"><![CDATA[<p>준비물 openssl이 깔린 환경 (openssl 설치하는 건 생략합니다.. 설치는 cgywin, git bash, wsl, dockerhub 등 자유롭게)</p> <h2 id="인증서는-배웠는데-실전에서-인증-관계를-잘-모르겠어요">인증서는 배웠는데, 실전에서 인증 관계를 잘 모르겠어요!</h2> <p>저 같은 분들이 많을 거라고 생각합니다. PKI를 텍스트로 배우면 인증 flow가 잘 와닿지가 않는 것 같습니다. (개인 경험) 그래서 openssl을 통해 Root인증서, intermediate인증서, 마지막 leaf 인증서를 만들어보고 leaf에서 intermediate가 인증한 인증서를 openssl command를 통해서 검증하면서 PKI를 이해 해봅시다.</p> <p>예제를 통해 생성할 PKI 구조는 다음과 같습니다.</p> <div class="col-sm mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/240529_PKI%20hierarchy.JPG-480.webp 480w,/assets/img/240529_PKI%20hierarchy.JPG-800.webp 800w,/assets/img/240529_PKI%20hierarchy.JPG-1400.webp 1400w," sizes="95vw" type="image/webp"/> <img src="/assets/img/240529_PKI%20hierarchy.JPG" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="lazy" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> </div> <h3 id="키-만들기">키 만들기</h3> <p>각 도메인(rootCA, intermediate, leaf)을 대표하는 3개의 키를 생성합니다.</p> <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>openssl genrsa <span class="nt">-out</span> rootCA.key 2048
+openssl genrsa <span class="nt">-out</span> intermediate.key 2048
+openssl genrsa <span class="nt">-out</span> leaf.key 2048
+</code></pre></div></div> <h3 id="csr을-통해-인증서-발급하기">CSR을 통해 인증서 발급하기</h3> <p>상위 스트림에게 CSR(Certificate Siging Request)를 요청하여 인증서를 발급받을 수 있습니다. 하지만 최상위 스트림의 경우(root CA) 상위 스트림이 없기 때문에 자기 자신에게 signing request를 보내면 되는데 이는 self-sign이라고 합니다. self-sign의 경우, 상위 스트림에 따로 CSR을 보낼 필요없이 자신의 도메인에서 self-sign하면 됩니다.</p> <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># RootCA 도메인에서 self-sign</span>
+openssl req <span class="nt">-x509</span> <span class="nt">-new</span> <span class="nt">-nodes</span> <span class="nt">-key</span> rootCA.key <span class="nt">-sha256</span> <span class="nt">-days</span> 1825 <span class="nt">-out</span> rootCA.pem
+</code></pre></div></div> <p>CA(Certificate Authority, 인증기관)인 rootCA.pem이 생성되었습니다.</p> <p>이제 intermediate 도메인으로 넘어가보죠, <br/> intermediate 키를 갖고 있는 사용자는 CSR을 생성하여 rootCA에 intermediate 키를 갖는 사용자의 신원을 보증을 부탁하는데(Reference), 보증된 문서는 인증서의 형태로 출력됩니다.</p> <p>생성하는 CSR에는 <code class="language-plaintext highlighter-rouge">intermediate 도메인 사용자에 대한 정보</code>와 <code class="language-plaintext highlighter-rouge">intermediate.key의 public key</code>가 담겨 있습니다. CSR에 사용자에 대한 정보를 실어 보내는 이유는 뭘까요? 만약 Reference목적으로 상위 스트림에게 public key를 전달한다면, 받는 입장에서 이 key가 도대체 누구한테서 전달된 key인지 알 수가 없기 때문입니다. 또한 상위 스트림에서 특정 포맷의 신원 정보를 필터링하여 아무 관계도 없는 제3자의 publicKey를 reference하는 상황도 방지하는 기능도 합니다.</p> <p>다시 본론으로 돌아와서, CSR을 상위 스트림에 보내는 이유는 앞서 말한대로, 전달하는 publicKey는 상위 스트림(여기서는 rootCA)을 대리인으로 세워 신원을 보증받기 위함입니다. rootCA라는 대리인이 보증하는 인증서는(정확하게 말하면 인증서 포맷안에 패키징된 하위 스트림의 publicKey)는 rootCA 대리인을 믿고 있는 사용자들(바꿔 말하면 rootCA의 publicKey를 갖고 있는 사용자들)이 믿고 쓸 수 있을 겁니다.</p> <p>물론 믿는다고 해서, 인증서 검증하는 단계가 생략되지는 않습니다. 자세한 검증 단계에 대한 설명은 뒤에서 살펴보고, 우선 하위 스트림에서 생성할 수 있는 CSR과 상위 스트림으로부터 생성되는 인증서부터 만들고 설명해 보죠.</p> <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># intermediate 도메인에서 CSR생성</span>
+openssl req <span class="nt">-new</span> <span class="nt">-sha256</span> <span class="nt">-key</span> intermediate.key <span class="nt">-out</span> intermediate.csr
+
+<span class="c"># RootCA도메인으로 CSR이 전달되어 rootCA가 reference하는 intermediate.pem 인증서가 발급됨</span>
+openssl x509 <span class="nt">-req</span> <span class="nt">-in</span> intermediate.csr <span class="nt">-CA</span> rootCA.pem <span class="nt">-CAkey</span> rootCA.key <span class="nt">-CAcreateserial</span> <span class="nt">-out</span> intermediate.pem <span class="nt">-days</span> 365 <span class="nt">-sha256</span> <span class="nt">-extfile</span> &lt;<span class="o">(</span><span class="nb">echo</span> <span class="s2">"basicConstraints=critical,CA:TRUE"</span><span class="o">)</span>
+</code></pre></div></div> <p>rootCA의 인증을 받은 인증서를 intermediate.pem가 생겼습니다. 하지만 인증서를 검증없이 사용할 수 있을까요? 인증서를 사용한다는 의미는 인증서 내부에 있는 publicKey를 사용한다는 뜻 입니다. 사용하고자 하는 publicKey를 무턱대고 쓸 수 없으니 신원을 검사할 필요가 있는데, 이를 상위 스트림이 사전 배포한 publicKey를 통해서 인증서 꼬리에 붙은 서명(Signature)을 검증하여 publicKey에 대한 신원을 확인할 수 있습니다. 물론 검증 과정의 선행으로 상위 스트림의 publicKey가 사용자에게 안전하게 전달된 것을 가정합니다.</p> <p>이를 그림으로 표현하면 아래와 같습니다. 예제에 등장하지 않는 intermediate B가 나왔는데 intermediate A의 publicKey를 생성하고 싶어하는 도메인으로 이해하면 되겠습니다.</p> <div class="col-sm mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/240529_HowCertificateCanBeVerified.JPG-480.webp 480w,/assets/img/240529_HowCertificateCanBeVerified.JPG-800.webp 800w,/assets/img/240529_HowCertificateCanBeVerified.JPG-1400.webp 1400w," sizes="95vw" type="image/webp"/> <img src="/assets/img/240529_HowCertificateCanBeVerified.JPG" class="img-fluid rounded z-depth-1" width="100%" height="auto" data-zoomable="" loading="lazy" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> </div> <p>자세한 인증서 검증 과정을 서술하면, <code class="language-plaintext highlighter-rouge">(A)인증서 꼬리에 붙은 서명을 상위스트림의 publicKey로 복호화한 값에 해쉬함수를 적용해 얻은 해쉬 값</code>과 <code class="language-plaintext highlighter-rouge">(B)서명을 제외한 인증서 자체 값에 해쉬함수를 적용해 얻은 해쉬</code>를 비교하여 서로 같으면 인증서에 담긴 publicKey의 신원이 확인되어 해당 publicKey를 사용해도 된다는 것이고, 반대의 경우 상위 스트림의 인증을 받지않은 사용자 신원으로 판명되어 사용하면 안된다는 것 입니다.</p> <p>위 예제로 보면 intermediate 도메인에 있는 사용자가 rootCA에 인증요청(CSR)을 통해 얻은 intermediate certificate는 rootCA의 publicKey를 갖고 있는 다른 사용자들에게 유효한 셈입니다.</p> <p>꽤나 복잡한데요, 위에 적어 놓은 검증 과정은 차차 나올테니 걱정마세요.</p> <p>계속해서 leaf 사용자 인증서도 생성해보겠습니다.</p> <p>다음으로 생성할 leaf 인증서는 intermediate를 상위 스트림으로 갖는 인증서로 생성하겠습니다. 생성한 CSR(leaf.csr)은 외부에 노출된 환경에서 intermediate 도메인으로 전달되며(publicKey는 노출되어도 상관 없습니다!), CSR에 대한 sign은 intermediate의 private key를 통해 이루어지고 이 결과물을 <code class="language-plaintext highlighter-rouge">leaf 사용자 인증서(leaf.pem)</code>라고 하겠습니다.</p> <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>openssl req <span class="nt">-new</span> <span class="nt">-sha256</span> <span class="nt">-key</span> leaf.key <span class="nt">-out</span> leaf.csr <span class="c"># Generate leaf CSR</span>
+openssl x509 <span class="nt">-req</span> <span class="nt">-in</span> leaf.csr <span class="nt">-CA</span> intermediate.pem <span class="nt">-CAkey</span> intermediate.key <span class="nt">-CAcreateserial</span> <span class="nt">-out</span> leaf.pem <span class="nt">-days</span> 365 <span class="nt">-sha256</span> //Sign leaf CSR by intermediate
+</code></pre></div></div> <p>여기서 -basicConstraints=critical,CA:TRUE이 생략된 채로 leaf 인증서가 만들어 지는데요, 이 의미는 leaf인증서를 통해 더이상 하위 스트림의 인증서를 만들지 않겠다는 뜻이 됩니다.</p> <p>예제를 통해 만든 인증서 chain 구조를 좀 더 자세히 나타내면 아래와 같습니다.</p> <div class="col-sm mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/240529_PKI%20hierarchy(Detail).JPG-480.webp 480w,/assets/img/240529_PKI%20hierarchy(Detail).JPG-800.webp 800w,/assets/img/240529_PKI%20hierarchy(Detail).JPG-1400.webp 1400w," sizes="95vw" type="image/webp"/> <img src="/assets/img/240529_PKI%20hierarchy(Detail).JPG" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="lazy" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> </div> <h3 id="인증서-검증하기">인증서 검증하기</h3> <p>인증서를 openssl을 통해 비교해보겠습니다. openssl에서 인증서 검증은 인증서 체인을 검증하기 때문에 rootCA인증서와 중간 단계인 intermediate인증서를 하나로 이어(cat=concatenate) trustChain인증서를 생성하겠습니다.</p> <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">cat </span>rootCA.pem intermediate.pem <span class="o">&gt;</span> trustChain.pem
+</code></pre></div></div> <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>openssl verify <span class="nt">-CAfile</span> rootCA.pem intermediate.pem  <span class="c"># Case1) Verify OK</span>
+openssl verify <span class="nt">-CAfile</span> trustChain.pem leaf.pem      <span class="c"># Case2) Verify OK</span>
+openssl verify <span class="nt">-CAfile</span> rootCA.pem leaf.pem       <span class="c"># Case3) Verify NOK</span>
+openssl verify <span class="nt">-CAfile</span> intermediate.pem leaf.pem <span class="c"># Case4) Verify NOK</span>
+</code></pre></div></div> <p>위 1번째 경우, intermediate.pem의 상위 스트림이 root.pem이 맞는지 확인 합니다. OK가 나왔을 겁니다. 2번째 경우, leaf.pem의 상위 스트림이 root.pem, intermediate.pem으로 이루어진 trustChain.pem이 맞는지 확인합니다. openssl에서 상위 스트림에 대한 확인은 연결된 모든 상위 스트림의 인증서를 검증합니다. 꼭 openssl이라서 이런 건 아니고 논리적으로도 모든 상위 스트림을 비교하는게 맞기 때문에 이러는 겁니다.</p> <p>하지만 이런 의문을 갖을 순 있죠, leaf의 상위 스트림이 intermediate 혹은 rootCA인데 이 경우에도 부분적으로 되어야 하는건 아닌가?</p> <p>예제 3번째 경우, leaf의 최상위 스트림이 rootCA이지만, verify는 실패하는데 이는 intermediate에 대한 정보가 없기 때문입니다. 왜냐하면 leaf 인증서의 경우 intermediate.key가 sign을 했기 때문에 rootCA가 갖고있는 publicKey로는 leaf인증서 꼬리에 달린 signature를 검증할 수 없기 때문입니다.</p> <p>하지만 4번째 경우, leaf의 바로 직전 상위 스트림이 intermediate인데 왜 출력되는 verify결과는 error일까요? 부분적으로 leaf 인증서 꼬리에 달린 signature에 대한 검증은 intermediate의 publicKey로 인증되지만 거시적으로 볼 때 intermediate 인증서 또한 검증하는게 더 안전하기 때문에, 최상위 정보가 없는 인증서에 대한 검증은 openssl에서는 error라고 판단하기 때문입니다.</p> <h3 id="raw-level로-인증서-검증하기">Raw level로 인증서 검증하기</h3> <p>4번째 경우, leaf인증서가 intermediate를 통해 발급되었음을 검증하는 일은 불가능한 일 일까요? 위에서 인증서 검증 과정은 인증서 꼬리에 붙은 <code class="language-plaintext highlighter-rouge">(A)인증서 꼬리에 붙은 서명을 상위스트림의 publicKey로 복호화한 값에 해쉬함수를 적용해 얻은 해쉬 값</code>과 <code class="language-plaintext highlighter-rouge">(B)서명을 제외한 인증서 자체 값에 해쉬함수를 적용해 얻은 해쉬</code>를 통해 이루어 진다고 했는데요. 한 번 그대로 만들어 보겠습니다.</p> <h4 id="b인증서-자체에-대한-해쉬값-얻기">(B)인증서 자체에 대한 해쉬값 얻기</h4> <p>(B)의 경우부터 살펴보죠, 서명을 제외한 인증서 자체 값은 어떻게 뽑아 낼까요? 그 전에 왜 인증서 자체 값이 필요한지 살펴보면, 상위 스트림 privateKey이 인증서를 만들 때, 사인한 서명값 뒤에 붙이는데, 서명을 만드는 방법은 사실 인증서에 대한 암호화를 사인이라고 부르기 때문입니다. 따라서 서명 검증을 한다는 뜻은 곧 서명에 대한 복호화를 의미하게 되는데, 복호화된 값이 인증서를 사인(암호화)하기 전 값과 정확하게 일치하면 암호화와 복호화에 사용된 비대칭키가 같은 쌍인지 아닌지를 검증할 수 있기 때문입니다. 그림으로 보면 더 쉽죠, 아래 그림에서 보자면 plainText는 인증서 자체 값과 대응합니다.</p> <div class="col-sm mt-3 mt-md-0"> <figure> <picture> <source class="responsive-img-srcset" srcset="/assets/img/240529_AsymmetricKeySignVerify.JPG-480.webp 480w,/assets/img/240529_AsymmetricKeySignVerify.JPG-800.webp 800w,/assets/img/240529_AsymmetricKeySignVerify.JPG-1400.webp 1400w," sizes="95vw" type="image/webp"/> <img src="/assets/img/240529_AsymmetricKeySignVerify.JPG" class="img-fluid rounded z-depth-1" width="100%" height="auto" loading="lazy" onerror="this.onerror=null; $('.responsive-img-srcset').remove();"/> </picture> </figure> </div> <p>물론 인증서 자체 값에 바로 사인(암호화)를 적용하진 않습니다. 암호화에 앞서 길이를 평준화할 목적과 어떤 값을 사인을 어떤 대상으로 했는지 쉽게 못 알아차릴 목적으로 해쉬 함수를 적용 합니다. 이제 인증서 자체 값(PlainText)을 뽑아내고, 해쉬까지 적용해 보겠습니다.</p> <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># 인증서에서 sign할 때 사용되었던 plainText 뽑아내기</span>
+openssl asn1parse <span class="nt">-inform</span> PEM <span class="nt">-in</span> leaf.pem <span class="nt">-strparse</span> 4 <span class="nt">-out</span> leef.val.der
+
+<span class="c"># 1) PlaintText에 해쉬함수 적용, Binary file로 보고 싶으면 경우</span>
+openssl dgst <span class="nt">-sha256</span> <span class="nt">-binary</span> leaf.val.der <span class="o">&gt;</span> leaf.val.der.dgst
+
+<span class="c"># 2) PlaintText에 해쉬함수 적용, 커맨드 창으로 hash 보고 싶은 경우</span>
+openssl dgst <span class="nt">-sha256</span> leaf.val.der <span class="nt">-out</span> leaf.val.der.dgst
+</code></pre></div></div> <p>저는 (B)의 값으로 da88de0c48c81d92e6e16a026460baad2e5ed0808eb6e5e9d3ab8f8ee2c52fd5의 해쉬값을 얻게 되었습니다. 이 값을 잘 기억하기 바랍니다.</p> <h4 id="a서명을-복호화한-값에서-해쉬값-얻기">(A)서명을 복호화한 값에서 해쉬값 얻기</h4> <p>이제 (A)값을 얻어 볼까요. 먼저 leaf 인증서의 서명을 뽑아보겠습니다. 아래 긴 옵션 없이 -noout까지 출력하셔도 됩니다.</p> <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># leaf 인증서 꼬리부분인 서명만 출력하기</span>
+<span class="nv">$ </span>openssl x509 <span class="nt">-in</span> leaf.pem <span class="nt">-text</span> <span class="nt">-noout</span> <span class="nt">-certopt</span> ca_default <span class="nt">-certopt</span> no_validity <span class="nt">-certopt</span> no_serial <span class="nt">-certopt</span> no_subject <span class="nt">-certopt</span> no_extensions <span class="nt">-certopt</span> no_signame | <span class="nb">sed </span>s/://g
+<span class="c"># &gt;&gt; output</span>
+    Signature Algorithm sha256WithRSAEncryption
+         16dc33615c15c2a7ab4e305c3f9bd42c508a
+         f4b6021611ddd3261f279a154b8164e42340
+         8d56f9efa954e6f5c1f7d85b1b4dd1cd5576
+         adc706b21086232f7884d390007804346e04
+         4696b1c30e31537b7fcb28f2f6edb3a2799e
+         d3bfe001a7162000fd449d933321bb8dabaa
+         9d224f761b65da8fa7c672539c55aaf0be0d
+         cd320a5ac48f23e1ee48e7b0c7fca8f2c2e3
+         fc92f565e051dbbc3636ed120226edccdae9
+         a2a7d75b369b595496b03adb31cf7f26edb3
+         718ba92b1183a582c4cc551e6db7e6bc37a4
+         40ca40c7ffaaac41a80737c9c41ed50082eb
+         e925f27e0bde984c7bf86acb474d57ee2114
+         c0bbefdf6a2b9362e1a4272021bfff6690af
+         ae56341c
+</code></pre></div></div> <p>이번엔 publicKey가 필요합니다. 필요한 이유는 서명을 검증(복호화)할 때는, 암호화 출력값인 서명에 publicKey를 사용하면 복호화할 수 있기 때문입니다. publicKey를 얻기위해서는 leaf.pem 인증서를 서명할 때 사용한, intermediate.key private키의 반대쪽 쌍인 publicKey가 필요합니다. leaf 도메인 입장에서 바로 직전 상위 스트림의 인증서(intermediate.pem)가 있다고 가정합니다. intermediate.pem에서 publicKey는 아래 커맨드로 뽑아낼 수 있죠.</p> <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="c"># intermediate 인증서에 담긴 publicKey 출력(RSA이므로 modulus만 뽑아내겠습니다)</span>
+ openssl x509 <span class="nt">-modulus</span> <span class="nt">-noout</span> &lt; intermediate.pem | <span class="nb">sed </span>s/Modulus<span class="o">=</span>//
+ <span class="c"># &gt;&gt; output</span>
+ b0aa11aae1e641c54abc1f3bdf52034fd7d497ed11045ad1f8eb78f2c38b91388a0401f422628e794904c2942a6d4c71f997be6e95a1135ea0fe1f1165c6619c86aa342d49f7b528443205b88110208ee0968a367225523a212f326de532a92c924b978ae1677f394403c7e9eda856a533d79ade889936ca2e69d441fe98dd5d5d6b5de1cb168a15526de39839de544906898e546e71ae2bea8ea6092a4edb3ef9186e9b1e906645ae33f6d32e670baba0b787968f6701e66a3d38c1d8970f868dd161f4abbe8e6f45b6a99121feb8c0d8f65cb945e60ffe1c4617f3c74a7b5894064bd136abd408fa98133604a969134aa3907df916b6d810d437b00571fd81
+</code></pre></div></div> <p>자 이제 서명값을 검증(복호화) 해보겠습니다. 아래는 파이썬으로 만든 RSA 복호화 코드입니다. (RSA 복호화가 겨우 1줄.. ㅋㅋ)</p> <p>위에서 얻은 서명과 공개키를 아래와 같이 넣어주었습니다.</p> <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">modulus</span><span class="o">=</span><span class="sh">"</span><span class="s">b0aa11aae1e641c54abc1f3bdf52034fd7d497ed11045ad1f8eb78f2c38b91388a0401f422628e794904c2942a6d4c71f997be6e95a1135ea0fe1f1165c6619c86aa342d49f7b528443205b88110208ee0968a367225523a212f326de532a92c924b978ae1677f394403c7e9eda856a533d79ade889936ca2e69d441fe98dd5d5d6b5de1cb168a15526de39839de544906898e546e71ae2bea8ea6092a4edb3ef9186e9b1e906645ae33f6d32e670baba0b787968f6701e66a3d38c1d8970f868dd161f4abbe8e6f45b6a99121feb8c0d8f65cb945e60ffe1c4617f3c74a7b5894064bd136abd408fa98133604a969134aa3907df916b6d810d437b00571fd81</span><span class="sh">"</span>
+<span class="n">exponent</span><span class="o">=</span><span class="mi">65537</span>
+<span class="n">signature</span> <span class="o">=</span><span class="sh">"</span><span class="s">16dc33615c15c2a7ab4e305c3f9bd42c508af4b6021611ddd3261f279a154b8164e423408d56f9efa954e6f5c1f7d85b1b4dd1cd5576adc706b21086232f7884d390007804346e044696b1c30e31537b7fcb28f2f6edb3a2799ed3bfe001a7162000fd449d933321bb8dabaa9d224f761b65da8fa7c672539c55aaf0be0dcd320a5ac48f23e1ee48e7b0c7fca8f2c2e3fc92f565e051dbbc3636ed120226edccdae9a2a7d75b369b595496b03adb31cf7f26edb3718ba92b1183a582c4cc551e6db7e6bc37a440ca40c7ffaaac41a80737c9c41ed50082ebe925f27e0bde984c7bf86acb474d57ee2114c0bbefdf6a2b9362e1a4272021bfff6690afae56341c</span><span class="sh">"</span>
+<span class="c1"># Decrypt RSA: (sign ** public_exp) % modulus
+</span><span class="n">padded_hash</span> <span class="o">=</span> <span class="nf">hex</span><span class="p">(</span><span class="nf">pow</span><span class="p">(</span><span class="nf">int</span><span class="p">(</span><span class="n">signature</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span> <span class="n">exponent</span><span class="p">,</span> <span class="nf">int</span><span class="p">(</span><span class="n">modulus</span><span class="p">,</span> <span class="mi">16</span><span class="p">)))</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">padded_hash</span><span class="p">)</span>
+
+<span class="c1">#Output
+#0x1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff003031300d060960864801650304020105000420da88de0c48c81d92e6e16a026460baad2e5ed0808eb6e5e9d3ab8f8ee2c52fd5
+</span></code></pre></div></div> <p>서명을 복호화 했더니 0x1fffff…인 값인 어떤 포맷된 결과가 출력되었습니다. 이는 RSA_PKCS_v1_5 포맷형식의 sign이 적용된 서명을 복호화 했기 때문인데, openssl을 통한 인증서 생성시 기본 설정값은 RSA-PKCS_v1_5를 통해서 sign을 하게끔 되어있기 때문입니다. RSA_PKCS_v1_5는 0x1ffffff…ffff..00 Hash-identifier..hashValue의 형태로 encoding하게끔 되어있습니다. 여기서 3031300d060960864801650304020105000420는 <a href="https://datatracker.ietf.org/doc/html/rfc8017#section-9.2">RSA PKCS_v1_5</a> 에서 정의하는 SHA256에 대한 hash identifier입니다. 저희에게는 hash identifier 뒤에 위치하는 H(hash)da88de0c48c81d92e6e16a026460baad2e5ed0808eb6e5e9d3ab8f8ee2c52fd5값이 의미가 있죠</p> <p>자 그러면 방금 과정을 통해 <code class="language-plaintext highlighter-rouge">(A)인증서 꼬리에 붙은 서명을 상위스트림의 publicKey로 복호화한 값에 해쉬함수를 적용해 얻은 해쉬 값</code>인 da88de0c48c81d92e6e16a026460baad2e5ed0808eb6e5e9d3ab8f8ee2c52fd5를 얻었습니다. ‘Raw level로 인증서 검증하기’ 맨 처음 과정에서 얻은 <code class="language-plaintext highlighter-rouge">(B)서명을 제외한 인증서 자체 값에 해쉬함수를 적용해 얻은 해쉬</code>는 어떤 값이였나요? da88de0c48c81d92e6e16a026460baad2e5ed0808eb6e5e9d3ab8f8ee2c52fd5가 출력되었습니다.</p> <p>따라서 본 목적이였던 leaf 인증서의 상위 스트림이 intermediate 인증서가 맞는지 아닌지에 대한 검증은 위 (A)와 (B)가 서로 같기 때문에 인증서 검증이 완료되었다고 볼 수 있겠습니다.</p>]]></content><author><name></name></author><category term="개발"/><category term="보안"/><category term="sidebar"/><summary type="html"><![CDATA[openssl을 통해서 인증서를 verification 해봅시다]]></summary></entry><entry><title type="html">a post with tabs</title><link href="https://sweetdrake.github.io/blog/2024/tabs/" rel="alternate" type="text/html" title="a post with tabs"/><published>2024-05-01T00:32:13+00:00</published><updated>2024-05-01T00:32:13+00:00</updated><id>https://sweetdrake.github.io/blog/2024/tabs</id><content type="html" xml:base="https://sweetdrake.github.io/blog/2024/tabs/"><![CDATA[<p>This is how a post with <a href="https://github.com/Ovski4/jekyll-tabs">tabs</a> looks like. Note that the tabs could be used for different purposes, not only for code.</p> <h2 id="first-tabs">First tabs</h2> <p>To add tabs, use the following syntax:</p> <div class="language-liquid highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cp">{%</span><span class="w"> </span><span class="nt">tabs</span><span class="w"> </span><span class="nv">group-name</span><span class="w"> </span><span class="cp">%}</span>
 
 <span class="cp">{%</span><span class="w"> </span><span class="nt">tab</span><span class="w"> </span><span class="nv">group-name</span><span class="w"> </span><span class="nv">tab-name-1</span><span class="w"> </span><span class="cp">%}</span>
 
@@ -13,16 +70,16 @@ Content 2
 <span class="cp">{%</span><span class="w"> </span><span class="nt">endtab</span><span class="w"> </span><span class="cp">%}</span>
 
 <span class="cp">{%</span><span class="w"> </span><span class="nt">endtabs</span><span class="w"> </span><span class="cp">%}</span>
-</code></pre></div></div> <p>With this you can generate visualizations like:</p> <ul id="log" class="tab" data-tab="1275e05a-2200-4178-8446-d7ade2480211" data-name="log"> <li class="active" id="log-php"> <a href="#">php </a> </li> <li id="log-js"> <a href="#">js </a> </li> <li id="log-ruby"> <a href="#">ruby </a> </li> </ul> <ul class="tab-content" id="1275e05a-2200-4178-8446-d7ade2480211" data-name="log"> <li class="active"> <div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">var_dump</span><span class="p">(</span><span class="s1">'hello'</span><span class="p">);</span>
+</code></pre></div></div> <p>With this you can generate visualizations like:</p> <ul id="log" class="tab" data-tab="3d8cddab-81ea-4174-81fb-8cabb7467279" data-name="log"> <li class="active" id="log-php"> <a href="#">php </a> </li> <li id="log-js"> <a href="#">js </a> </li> <li id="log-ruby"> <a href="#">ruby </a> </li> </ul> <ul class="tab-content" id="3d8cddab-81ea-4174-81fb-8cabb7467279" data-name="log"> <li class="active"> <div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">var_dump</span><span class="p">(</span><span class="s1">'hello'</span><span class="p">);</span>
 </code></pre></div></div> </li> <li> <div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="dl">"</span><span class="s2">hello</span><span class="dl">"</span><span class="p">);</span>
 </code></pre></div></div> </li> <li> <div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">pputs</span> <span class="dl">'</span><span class="s1">hello</span><span class="dl">'</span>
-</code></pre></div></div> </li> </ul> <h2 id="another-example">Another example</h2> <ul id="data-struct" class="tab" data-tab="d771d99b-362b-45eb-90b9-f578882aa098" data-name="data-struct"> <li class="active" id="data-struct-yaml"> <a href="#">yaml </a> </li> <li id="data-struct-json"> <a href="#">json </a> </li> </ul> <ul class="tab-content" id="d771d99b-362b-45eb-90b9-f578882aa098" data-name="data-struct"> <li class="active"> <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">hello</span><span class="pi">:</span>
+</code></pre></div></div> </li> </ul> <h2 id="another-example">Another example</h2> <ul id="data-struct" class="tab" data-tab="5a740bc3-46fb-429b-9ad0-62717ea81691" data-name="data-struct"> <li class="active" id="data-struct-yaml"> <a href="#">yaml </a> </li> <li id="data-struct-json"> <a href="#">json </a> </li> </ul> <ul class="tab-content" id="5a740bc3-46fb-429b-9ad0-62717ea81691" data-name="data-struct"> <li class="active"> <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">hello</span><span class="pi">:</span>
   <span class="pi">-</span> <span class="s2">"</span><span class="s">whatsup"</span>
   <span class="pi">-</span> <span class="s2">"</span><span class="s">hi"</span>
 </code></pre></div></div> </li> <li> <div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
   </span><span class="nl">"hello"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"whatsup"</span><span class="p">,</span><span class="w"> </span><span class="s2">"hi"</span><span class="p">]</span><span class="w">
 </span><span class="p">}</span><span class="w">
-</span></code></pre></div></div> </li> </ul> <h2 id="tabs-for-something-else">Tabs for something else</h2> <ul id="something-else" class="tab" data-tab="166c4e2d-ed6f-414a-8ad3-468e94fae71b" data-name="something-else"> <li class="active" id="something-else-text"> <a href="#">text </a> </li> <li id="something-else-quote"> <a href="#">quote </a> </li> <li id="something-else-list"> <a href="#">list </a> </li> </ul> <ul class="tab-content" id="166c4e2d-ed6f-414a-8ad3-468e94fae71b" data-name="something-else"> <li class="active"> <p>Regular text</p> </li> <li> <blockquote> <p>A quote</p> </blockquote> </li> <li> <p>Hipster list</p> <ul> <li>brunch</li> <li>fixie</li> <li>raybans</li> <li>messenger bag</li> </ul> </li> </ul>]]></content><author><name></name></author><category term="sample-posts"/><category term="formatting"/><category term="code"/><summary type="html"><![CDATA[this is what included tabs in a post could look like]]></summary></entry><entry><title type="html">a post with typograms</title><link href="https://sweetdrake.github.io/blog/2024/typograms/" rel="alternate" type="text/html" title="a post with typograms"/><published>2024-04-29T23:36:10+00:00</published><updated>2024-04-29T23:36:10+00:00</updated><id>https://sweetdrake.github.io/blog/2024/typograms</id><content type="html" xml:base="https://sweetdrake.github.io/blog/2024/typograms/"><![CDATA[<p>This is an example post with some <a href="https://github.com/google/typograms/">typograms</a> code.</p> <div class="language-markdown highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">```</span><span class="nl">typograms
+</span></code></pre></div></div> </li> </ul> <h2 id="tabs-for-something-else">Tabs for something else</h2> <ul id="something-else" class="tab" data-tab="41a178b3-4779-4923-9e46-1daed05d8826" data-name="something-else"> <li class="active" id="something-else-text"> <a href="#">text </a> </li> <li id="something-else-quote"> <a href="#">quote </a> </li> <li id="something-else-list"> <a href="#">list </a> </li> </ul> <ul class="tab-content" id="41a178b3-4779-4923-9e46-1daed05d8826" data-name="something-else"> <li class="active"> <p>Regular text</p> </li> <li> <blockquote> <p>A quote</p> </blockquote> </li> <li> <p>Hipster list</p> <ul> <li>brunch</li> <li>fixie</li> <li>raybans</li> <li>messenger bag</li> </ul> </li> </ul>]]></content><author><name></name></author><category term="sample-posts"/><category term="formatting"/><category term="code"/><summary type="html"><![CDATA[this is what included tabs in a post could look like]]></summary></entry><entry><title type="html">a post with typograms</title><link href="https://sweetdrake.github.io/blog/2024/typograms/" rel="alternate" type="text/html" title="a post with typograms"/><published>2024-04-29T23:36:10+00:00</published><updated>2024-04-29T23:36:10+00:00</updated><id>https://sweetdrake.github.io/blog/2024/typograms</id><content type="html" xml:base="https://sweetdrake.github.io/blog/2024/typograms/"><![CDATA[<p>This is an example post with some <a href="https://github.com/google/typograms/">typograms</a> code.</p> <div class="language-markdown highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">```</span><span class="nl">typograms
 </span><span class="sb">+----+
 |    |---&gt; My first diagram!
 +----+</span>
@@ -774,162 +831,4 @@ index 3bb754ac..a34839c0 100644
     }
   ]
 }
-</code></pre> <p>Note that this library offer support for both light and dark themes. You can switch between them using the theme switcher in the top right corner of the page.</p>]]></content><author><name></name></author><category term="sample-posts"/><category term="formatting"/><category term="charts"/><summary type="html"><![CDATA[this is what included echarts code could look like]]></summary></entry><entry><title type="html">a post with chart.js</title><link href="https://sweetdrake.github.io/blog/2024/chartjs/" rel="alternate" type="text/html" title="a post with chart.js"/><published>2024-01-26T01:04:00+00:00</published><updated>2024-01-26T01:04:00+00:00</updated><id>https://sweetdrake.github.io/blog/2024/chartjs</id><content type="html" xml:base="https://sweetdrake.github.io/blog/2024/chartjs/"><![CDATA[<p>This is an example post with some <a href="https://www.chartjs.org/">chart.js</a> code.</p> <div class="language-markdown highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">```</span><span class="nl">chartjs
-</span><span class="sb">{
-  "type": "line",
-  "data": {
-    "labels": [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July"
-    ],
-    "datasets": [
-      {
-        "label": "# of bugs",
-        "fill": false,
-        "lineTension": 0.1,
-        "backgroundColor": "rgba(75,192,192,0.4)",
-        "borderColor": "rgba(75,192,192,1)",
-        "borderCapStyle": "butt",
-        "borderDash": [],
-        "borderDashOffset": 0,
-        "borderJoinStyle": "miter",
-        "pointBorderColor": "rgba(75,192,192,1)",
-        "pointBackgroundColor": "#fff",
-        "pointBorderWidth": 1,
-        "pointHoverRadius": 5,
-        "pointHoverBackgroundColor": "rgba(75,192,192,1)",
-        "pointHoverBorderColor": "rgba(220,220,220,1)",
-        "pointHoverBorderWidth": 2,
-        "pointRadius": 1,
-        "pointHitRadius": 10,
-        "data": [
-          65,
-          59,
-          80,
-          81,
-          56,
-          55,
-          40
-        ],
-        "spanGaps": false
-      }
-    ]
-  },
-  "options": {}
-}</span>
-<span class="p">```</span>
-</code></pre></div></div> <p>This is how it looks like:</p> <pre><code class="language-chartjs">{
-  "type": "line",
-  "data": {
-    "labels": [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July"
-    ],
-    "datasets": [
-      {
-        "label": "# of bugs",
-        "fill": false,
-        "lineTension": 0.1,
-        "backgroundColor": "rgba(75,192,192,0.4)",
-        "borderColor": "rgba(75,192,192,1)",
-        "borderCapStyle": "butt",
-        "borderDash": [],
-        "borderDashOffset": 0,
-        "borderJoinStyle": "miter",
-        "pointBorderColor": "rgba(75,192,192,1)",
-        "pointBackgroundColor": "#fff",
-        "pointBorderWidth": 1,
-        "pointHoverRadius": 5,
-        "pointHoverBackgroundColor": "rgba(75,192,192,1)",
-        "pointHoverBorderColor": "rgba(220,220,220,1)",
-        "pointHoverBorderWidth": 2,
-        "pointRadius": 1,
-        "pointHitRadius": 10,
-        "data": [
-          65,
-          59,
-          80,
-          81,
-          56,
-          55,
-          40
-        ],
-        "spanGaps": false
-      }
-    ]
-  },
-  "options": {}
-}
-</code></pre> <p>Also another example chart.</p> <div class="language-markdown highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">```</span><span class="nl">chartjs
-</span><span class="sb">{
-  "type": "doughnut",
-  "data": {
-    "labels": [
-      "Red",
-      "Blue",
-      "Yellow"
-    ],
-    "datasets": [
-      {
-        "data": [
-          300,
-          50,
-          100
-        ],
-        "backgroundColor": [
-          "#FF6384",
-          "#36A2EB",
-          "#FFCE56"
-        ],
-        "hoverBackgroundColor": [
-          "#FF6384",
-          "#36A2EB",
-          "#FFCE56"
-        ]
-      }
-    ]
-  },
-  "options": {}
-}</span>
-<span class="p">```</span>
-</code></pre></div></div> <p>Which generates:</p> <pre><code class="language-chartjs">{
-  "type": "doughnut",
-  "data": {
-    "labels": [
-      "Red",
-      "Blue",
-      "Yellow"
-    ],
-    "datasets": [
-      {
-        "data": [
-          300,
-          50,
-          100
-        ],
-        "backgroundColor": [
-          "#FF6384",
-          "#36A2EB",
-          "#FFCE56"
-        ],
-        "hoverBackgroundColor": [
-          "#FF6384",
-          "#36A2EB",
-          "#FFCE56"
-        ]
-      }
-    ]
-  },
-  "options": {}
-}
-</code></pre>]]></content><author><name></name></author><category term="sample-posts"/><category term="formatting"/><category term="charts"/><summary type="html"><![CDATA[this is what included chart.js code could look like]]></summary></entry></feed>
+</code></pre> <p>Note that this library offer support for both light and dark themes. You can switch between them using the theme switcher in the top right corner of the page.</p>]]></content><author><name></name></author><category term="sample-posts"/><category term="formatting"/><category term="charts"/><summary type="html"><![CDATA[this is what included echarts code could look like]]></summary></entry></feed>
