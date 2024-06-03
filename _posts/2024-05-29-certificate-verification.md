@@ -21,6 +21,8 @@ toc:
 
 예제를 통해 생성할 PKI 구조는 다음과 같습니다.
 
+예제에 사용한 파일들은 <a href="https://github.com/sweetdrake/certificate-verification">github</a>에 올려두었습니다.
+
 <div class="col-sm mt-3 mt-md-0">
         {% include figure.liquid path="assets/img/240529_PKI hierarchy.JPG" class="img-fluid rounded z-depth-1" %}
 </div>
@@ -112,7 +114,9 @@ openssl verify -CAfile intermediate.pem leaf.pem # Case4) Verify NOK
 
 #### (B)인증서 자체에 대한 해쉬값 얻기
 (B)의 경우부터 살펴보죠, 서명을 제외한 인증서 자체 값은 어떻게 뽑아 낼까요?
-그 전에 왜 인증서 자체 값이 필요한지 살펴보면, 상위 스트림 privateKey이 인증서를 만들 때, 사인한 서명값 뒤에 붙이는데, 서명을 만드는 방법은 사실 인증서에 대한 암호화를 사인이라고 부르기 때문입니다. 따라서 서명 검증을 한다는 뜻은 곧 서명에 대한 복호화를 의미하게 되는데, 복호화된 값이 인증서를 사인(암호화)하기 전 값과 정확하게 일치하면 암호화와 복호화에 사용된 비대칭키가 같은 쌍인지 아닌지를 검증할 수 있기 때문입니다.
+그 전에 왜 인증서 자체 값이 필요한지 살펴보면, 상위 스트림 privateKey이 인증서를 만들 때, 사인한 서명값 뒤에 붙이는데, 서명을 만드는 방법은 사실 인증서에 대한 암호화를 사인이라고 부르기 때문입니다.
+
+ 따라서 서명 검증을 한다는 뜻은 곧 서명에 대한 복호화를 의미하게 되는데, 복호화된 값이 인증서를 사인(암호화)하기 전 값과 정확하게 일치하면 암호화와 복호화에 사용된 비대칭키가 같은 쌍인지 아닌지를 검증할 수 있기 때문입니다.
 그림으로 보면 더 쉽죠, 아래 그림에서 보자면 plainText는 인증서 자체 값과 대응합니다.
 <div class="col-sm mt-3 mt-md-0">
         {% include figure.liquid path="assets/img/240529_AsymmetricKeySignVerify.JPG" class="img-fluid rounded z-depth-1" %}
@@ -130,7 +134,7 @@ openssl dgst -sha256 -binary leaf.val.der > leaf.val.der.dgst
 # 2) PlaintText에 해쉬함수 적용, 커맨드 창으로 hash 보고 싶은 경우
 openssl dgst -sha256 leaf.val.der -out leaf.val.der.dgst
 ```
-저는 (B)의 값으로 da88de0c48c81d92e6e16a026460baad2e5ed0808eb6e5e9d3ab8f8ee2c52fd5의 해쉬값을 얻게 되었습니다. 이 값을 잘 기억하기 바랍니다.
+저는 (B)의 값으로 da88de0c48c81d92e6e16a026460baad2e5ed0808eb6e5e9d3ab8f8ee2c52fd5의 해쉬값을 얻게 되었습니다. 이 값이 이 후에 나올 과정을 통해서 똑같이 생성되는지 살펴보도록 하죠.
 
 
 #### (A)서명을 복호화한 값에서 해쉬값 얻기
@@ -165,6 +169,7 @@ $ openssl x509 -in leaf.pem -text -noout -certopt ca_default -certopt no_validit
  ```
 
 자 이제 서명값을 검증(복호화) 해보겠습니다. 아래는 파이썬으로 만든 RSA 복호화 코드입니다.
+
 (RSA 복호화가 겨우 1줄.. ㅋㅋ)
 
 위에서 얻은 서명과 공개키를 아래와 같이 넣어주었습니다.
