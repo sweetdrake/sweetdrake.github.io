@@ -80,6 +80,18 @@ Sharepoint뿐만 아니라 Teams안에 있는 채널들에 대한 파일들 또�
 
 파일을 실수로 삭제하거나 복원하고 싶을 때는 sharepoint로 접속해 bin에 있는 항목을 살려주거나, 파일 우클릭 후 version history를 통해 복원 가능하다.
 
+## GitExtension :arrows_clockwise:
+Windows에서 사용할 수 있는 툴. 편한 UI, 로컬에 설치된 git repository 관리, 파일 별 history 추적, 나름(?) 편리한 diff 등이 장점이다.
+
+(diff가 보기 좋긴해도, vscode에서 제공하는 source compare 보다 가독성이 떨어지긴 함.. )
+
+git commit template을 작성할 수 있어 formatting이 요구되는 commit에 사용하기 적합한 듯.
+
+단점은 gerrit이랑 사용하면 좀 꼬이는 듯.. gerrit 커맨드랑 호환하려면 따로 plugin을 설치해야하는 것으로 보임
+
+생각난 김에 적는 gerrit push 키워드,, git push origin HEAD:refs/for/master
+위 커맨드가 안 먹히면 msg-hook을 통한 clone을 안 했기 때문임. (간접적으로 cloned_repo/.git/hooks/commit-msg 파일 유무로 msg-hook이 되있는지 체크 가능)
+gerrit은 commit score와 verify 조건을 만족할 때까지 커밋을 계속 수정해서 올리는게 일반적이므로, git commit --amend를 상당히 자주 사용하게 된다 :fearful:
 
 ## MobaXterm :computer:
 여러가지 기능이 있는 터미널 이다. 주로 SSH 목적으로 쓰는데, 가장 편한건 SSH로 접속했을 때 왼쪽에 file explorer 창을 띄워주는 기능이다.
