@@ -157,3 +157,40 @@ MS 소개 페이지에 있을 정도로 유명한 utility tool이다. 기능은 
 - `F1`: extension에서 파생되는 기능시 사용 ex. F1 후 git graph 검색하여 열기 기능
 - `F12`: Go to definition
 - `Ctrl`+` : 터미널 open/close
+
+## Linux :penguin:
+-`Ctrl`+`R` : bash에서 해당 커맨드 입력 후, 타이핑 시 bash 히스토리에서 사용되었던 가장 유사한 커맨드 출력<br>
+(Powershell에서도 똑같이 동작)
+
+GREP:
+A: After, B: Before, C:In between
+```bash
+grep -A 3 <keyword> <file> # 매칭되는 keyword로부터 밑의 3줄을 추가로 출력함
+```
+
+-r:recursive search to downstream directories
+-n:line number
+```bash
+grep -rn <keyword> * #현재 디렉터리의 모든 하위 경로에 있는 파일에서 매칭되는 keyword 있으면 파일과 라인번호 출력
+```
+
+XXD: binary 포맷 파일 다룰 때 사용
+```bash
+xxd -c 8 <file> # Number of character in a row
+xxd -p <file>   # Print wihtout format
+xxd -u <file>   # Print capital character
+```
+LLD: 사용자 빌드환경에서 사용했던 .so 파일이 target device에서 지원되는지 아닌지 확인할 때 사용함
+```bash
+lld <.bin file> # Print all relavant .so(shared object) file
+```
+
+잡다한 커맨드
+```bash
+ldconfig -p # library가 있는 경로 출력
+which <binary file> # 커맨드가 ~/.local/bin에 있는지 긴가민가 할 때, 파일 위치어딘지 출력하는 커맨드
+cat `which <vinary file>` # ``을 붙이면 커맨드 실행결과를 터미널에 파라미터로 리턴 한다.
+                          # 예시는 cat을 썻으므로 해당 파일을 터미널에 출력
+pinky #최근 접속한 기록 출력
+ps ax | grep sshd # ssh server에 접속해 있는 현재 사용자 출력
+```
