@@ -3,7 +3,7 @@ layout: post
 title: ssh python 삽질기록
 date: 2024-06-17 9:14:00
 description: ssh로 host간 jump를 사용해보자
-tags: 삽질 sidebar
+tags: 삽질 sidebar python
 categories: 개발
 giscus_comments: true
 related_posts: false
