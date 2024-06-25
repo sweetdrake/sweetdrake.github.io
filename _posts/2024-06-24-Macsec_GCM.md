@@ -34,3 +34,8 @@ gpt3.5로 생성한 코드이고 중간마다 padding이 깨지고, 출력값이
 <div class="col-sm mt-3 mt-md-0">
         {% include figure.liquid path="assets/img/2024-06-224-Masec_GCM_tableC9.JPG" class="img-fluid rounded z-depth-1" %}
 </div>
+
+
+#### Table C-27, 암호화가 포함된 MACSec
+
+해당 코드는 제 github <a href="https://github.com/sweetdrake/MACSec_GCM_AES">MACSec_GCM_AES</a>의 AES_GCM_ENC.py를 참고 바랍니다
