@@ -3,17 +3,15 @@
     "name": "Jake Lee",
     "label": "Cyber security engineer in vehicle",
     "image": "",
-    "email": "sweetdrake@naver.com",
-    "url": "https://www.linkedin.com/in/jaekeun-lee-38893b14a",
-    "summary": "A Korean-born cyber security engineer with a passion for embedded systems and unix system. I am currently working at Volvo Cars in Gothenburg, Sweden.",
+    "summary": "A Korean-born cyber security engineer with a passion for embedded systems and unix system. I am currently working at Volvo Cars in Göteborg, Sweden.",
     "location": {
-      "city": "Gothenburg",
+      "city": "Göteborg",
       "countryCode": "SE"
     }
   },
   "work": [
     {
-      "name": "Volvo Cars(Sweden)",
+      "name": "Volvo Cars(Göteborg, Sweden)",
       "position": "Cyber security engineer",
       "startDate": "2022-9",
       "endDate": "Current",
@@ -21,7 +19,7 @@
       "highlights": ["Some/IP", "Security concept development"]
     },
     {
-      "name": "LG Innotek(Seoul)",
+      "name": "LG Innotek(Seoul, Korea)",
       "position": "Cyber security engineer",
       "startDate": "2020-03",
       "endDate": "2022-09",
@@ -29,7 +27,7 @@
       "highlights": ["AES-CMAC, RSA-PSS","TARA/CSMS"]
     },
     {
-      "name": "LG Innotek(Seoul)",
+      "name": "LG Innotek(Seoul, Korea)",
       "position": "Software engineer",
       "startDate": "2017-12",
       "endDate": "2020-03",
